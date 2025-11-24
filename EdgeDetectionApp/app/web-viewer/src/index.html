@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edge Detection Web Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .tech-stack {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .tech-tag {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .video-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .video-container {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        #video {
+            width: 100%;
+            height: auto;
+            background: #000;
+            display: none;
+        }
+
+        #outputCanvas {
+            width: 100%;
+            height: auto;
+            background: #f8f9fa;
+            border: 3px solid #e9ecef;
+        }
+
+        .canvas-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .controls-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .controls-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .controls-section h2::before {
+            content: "⚙️";
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group h3::before {
+            font-size: 0.9rem;
+        }
+
+        .threshold-control h3::before {
+            content: "📊";
+        }
+
+        .appearance-control h3::before {
+            content: "🎨";
+        }
+
+        .camera-control h3::before {
+            content: "📷";
+        }
+
+        .slider-container {
+            margin-bottom: 15px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .slider-value {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 5px;
+            background: #dee2e6;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #dc3545;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.active {
+            background: #28a745;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .performance {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .performance-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #dee2e6;
+            color: #6c757d;
+        }
+
+        .instructions {
+            background: #e7f3ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #007bff;
+        }
+
+        .instructions h3 {
+            color: #0056b3;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions h3::before {
+            content: "💡";
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            line-height: 1.6;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #dc3545;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Edge Detection Web Viewer</h1>
+        <p>Real-time edge detection using computer vision algorithms. Test and visualize edge detection parameters before deploying to Android.</p>
+        <div class="tech-stack">
+            <span class="tech-tag">TypeScript</span>
+            <span class="tech-tag">Computer Vision</span>
+            <span class="tech-tag">Real-time Processing</span>
+            <span class="tech-tag">WebRTC</span>
+        </div>
+    </div>
+
+    <div class="error-message" id="errorMessage">
+        <strong>Camera Error:</strong> <span id="errorText">Unable to access camera. Please check permissions and try again.</span>
+    </div>
+
+    <div class="content">
+        <div class="video-section">
+            <div class="video-container">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="outputCanvas" width="640" height="480"></canvas>
+                <div class="canvas-overlay" id="canvasOverlay">Edge Detection Output</div>
+            </div>
+
+            <div class="instructions">
+                <h3>How to Use</h3>
+                <ol>
+                    <li>Click "Start Camera" to begin processing</li>
+                    <li>Adjust threshold values to fine-tune edge detection</li>
+                    <li>Toggle between original and edge view using the checkbox</li>
+                    <li>Monitor performance metrics in real-time</li>
+                    <li>Use these optimal settings as reference for your Android app</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="controls-section">
+            <h2>Control Panel</h2>
+
+            <div class="control-group threshold-control">
+                <h3>Edge Detection Parameters</h3>
+
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Low Threshold</span>
+                        <span class="slider-value" id="lowValue">50</span>
+                    </div>
+                    <input type="range" id="lowThreshold" min="0" max="255" value="50" class="slider">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>High Threshold</span>
+                        <span class="slider-value" id="highValue">150</span>
+                    </div>
+                    <input type="range" id="highThreshold" min="0" max="255" value="150" class="slider">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Blur Amount</span>
+                        <span class="slider-value" id="blurValue">1.5</span>
+                    </div>
+                    <input type="range" id="blurAmount" min="0.5" max="5" step="0.1" value="1.5" class="slider">
+                </div>
+            </div>
+
+            <div class="control-group appearance-control">
+                <h3>Display Options</h3>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="showOriginal">
+                    <label for="showOriginal">Show Original Camera Feed</label>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="invertColors" checked>
+                    <label for="invertColors">White Edges on Black Background</label>
+                </div>
+            </div>
+
+            <div class="control-group camera-control">
+                <h3>Camera Controls</h3>
+
+                <div class="button-group">
+                    <button id="startCamera" class="btn-primary">
+                        <span>📷</span>
+                        Start Camera
+                    </button>
+                    <button id="stopCamera" class="btn-secondary" disabled>
+                        <span>⏹️</span>
+                        Stop
+                    </button>
+                </div>
+
+                <div class="button-group">
+                    <button id="screenshot" class="btn-success" disabled>
+                        <span>📸</span>
+                        Screenshot
+                    </button>
+                </div>
+
+                <div class="status-indicator">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Camera not started</span>
+                </div>
+            </div>
+
+            <div class="performance">
+                <h3>Performance Metrics</h3>
+                <div class="performance-stats">
+                    <div class="stat">
+                        <div class="stat-value" id="fpsCounter">0</div>
+                        <div class="stat-label">FPS</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="processingTime">0ms</div>
+                        <div class="stat-label">Processing</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="resolution">640x480</div>
+                        <div class="stat-label">Resolution</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="edgeIntensity">0%</div>
+                        <div class="stat-label">Edge Density</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Edge Detection Web Viewer | Compatible with Android OpenCV Implementation</p>
+        <p>Use this tool to test edge detection parameters before integrating with your mobile app</p>
+    </div>
+</div>
+
+<script type="module" src="/src/app.ts"></script>
+</body>
+</html>
