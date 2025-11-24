@@ -1,4 +1,5 @@
 Real-Time-Edge-Detection-Viewer
+
 Android Application
 Kotlin - Modern Android development
 
